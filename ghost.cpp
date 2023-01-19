@@ -215,12 +215,14 @@ int main()
 
 	// game loop
 	while (1) {
+		cerr << "new loop" << endl;
 		bool fin = false;
 		//search for dead troops and delete
 		killTroops(&troops);
 		int entity_count; // the number of entities (e.g. factories and troops)
 		cin >> entity_count; cin.ignore();
 		//int troop_count = entity_count - factory_count;
+		cerr << "start data input" << endl;
 		for (int i = 0; i < entity_count; i++) {
 			int entity_id;
 			string entity_type;
@@ -261,10 +263,12 @@ int main()
 				}
 			}
 		}
+		cerr << "end data input" << endl;
 
 		//showFactories(factories, factory_count);
 		//showTroops(troops);
 
+		bool skip = false;
 		if (firstTurn) {
 			cout << "WAIT" << endl;
 			firstTurn = false;
@@ -274,18 +278,22 @@ int main()
 			if (sourceNode == -1) {
 				cout << "WAIT" << endl;
 				fin = true;
+				skip = true;
 			}
 			cerr << "source" << sourceNode;
-			int destinationNode = closestProdNode(sourceNode, links, factories);
-			cerr << "destination (try1):" << destinationNode << endl;
-			if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
-			cerr << "destination (try2):" << destinationNode << endl;
-			if (destinationNode == -1) {
-				cout << "WAIT" << endl;
-				fin = true;
+			if (!skip) {
+				int destinationNode = closestProdNode(sourceNode, links, factories);
+				cerr << "destination (try1):" << destinationNode << endl;
+				if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
+				cerr << "destination (try2):" << destinationNode << endl;
+				if (destinationNode == -1) {
+					cout << "WAIT" << endl;
+					fin = true;
+				}
+				cerr << sourceNode << ' ' << destinationNode << endl;
+
+				if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << endl;
 			}
-			cerr << sourceNode << ' ' << destinationNode << endl;
-			if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << endl;
 		}
 
 		//set all troops to not alive
