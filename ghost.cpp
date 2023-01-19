@@ -211,14 +211,23 @@ int main()
 	bool firstTurn = true;
 	list<troop> troops;
 	int startingNode;
+	int startingEnemyNode;
 	int startingCyborgs;
+	int bomb_count = 2;
+	int current_turn = 1;
 
 	// game loop
 	while (1) {
+		auto start_loop = steady_clock::now();
+		current_turn++;
 		cerr << "new loop" << endl;
 		bool fin = false;
+		//int ally_cyborg_count = 0;
+		//int enemy_cyborg_count = 0;
+
 		//search for dead troops and delete
 		killTroops(&troops);
+
 		int entity_count; // the number of entities (e.g. factories and troops)
 		cin >> entity_count; cin.ignore();
 		//int troop_count = entity_count - factory_count;
@@ -236,7 +245,6 @@ int main()
 			//data for factories
 			if (entity_type == "FACTORY") {
 				if (!firstTurn) {
-					if (entity_id == 6) cerr << arg_1 << ' ' << arg_2;
 					factories[entity_id].player = arg_1;
 					factories[entity_id].cyborgs_count = arg_2;
 				}
@@ -245,9 +253,14 @@ int main()
 					if (arg_1 == 1) {
 						startingNode = entity_id;
 						startingCyborgs = arg_2;
-						alliedFactories.push_back(entity_id);
+						//alliedFactories.push_back(entity_id);
 					}
+					if (arg_1 == -1) startingEnemyNode = entity_id;
 				}
+				/*
+				if (arg_1 == 1) ally_cyborg_count += arg_2;
+				else if (arg_1 == -1) enemy_cyborg_count += arg_2;
+				cerr << "factory" << arg_1 << ' ' << arg_2 << endl;*/
 			}
 
 			//data for troops
@@ -261,6 +274,11 @@ int main()
 					troop *current_troop = new troop(entity_id, arg_1, arg_2, arg_3, arg_4, arg_5, true);
 					troops.push_back(*current_troop);
 				}
+
+				/*
+				if (arg_1 == 1) ally_cyborg_count += arg_4;
+				else enemy_cyborg_count += arg_4;
+				cerr << "troop" << arg_1 << ' ' << arg_2 << endl;*/
 			}
 		}
 		cerr << "end data input" << endl;
@@ -270,13 +288,17 @@ int main()
 
 		bool skip = false;
 		if (firstTurn) {
-			cout << "WAIT" << endl;
+			cout << "WAIT" << ';';
 			firstTurn = false;
 		}
 		else {
+			if (bomb_count == 2) {
+				cout << "BOMB " << startingNode << ' ' << startingEnemyNode << ';';
+				bomb_count--;
+			}
 			int sourceNode = highestArmyNode(factories, factory_count, startingNode);
 			if (sourceNode == -1) {
-				cout << "WAIT" << endl;
+				cout << "WAIT" << ';';
 				fin = true;
 				skip = true;
 			}
@@ -287,16 +309,20 @@ int main()
 				if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
 				cerr << "destination (try2):" << destinationNode << endl;
 				if (destinationNode == -1) {
-					cout << "WAIT" << endl;
+					cout << "WAIT" << ';';
 					fin = true;
 				}
 				cerr << sourceNode << ' ' << destinationNode << endl;
 
-				if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << endl;
+				if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << ';';
 			}
 		}
 
 		//set all troops to not alive
 		setAlive(&troops);
+
+		auto end_loop = steady_clock::now();
+		auto time_loop = duration_cast<milliseconds>(end_loop - start_loop);
+		cout << "MSG " << time_loop.count() << "ms; turn=" << current_turn  << endl;
 	}
 }
