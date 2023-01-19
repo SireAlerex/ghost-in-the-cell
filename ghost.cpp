@@ -149,6 +149,20 @@ void showTroops(list<troop> t) {
 	}
 }
 
+int closest3ProdNode(int id, list<link> *links, factory *f) {
+	int dist_min = 21;
+	int id_ret = -1;
+	int player = f[id].player;
+	for (auto it = links[id].begin(); it != links[id].end(); it++) {
+		if (f[(*it).factory].player != player && f[(*it).factory].prod == 3 && (*it).distance < dist_min) {
+			dist_min = (*it).distance;
+			id_ret = (*it).factory;
+		}
+	}
+
+	return id_ret;
+}
+
 int closestProdNode(int id, list<link> *links, factory *f) {
 	int dist_min = 21;
 	int id_ret = -1;
@@ -217,6 +231,9 @@ int main()
 	int startingCyborgs;
 	int bomb_count = 2;
 	int current_turn = 1;
+	const int FIRST_BOMB_LAUNCH_TURN = 1;
+	int second_bomb_launch_turn = 3;
+	int second_bomb_target;
 
 	// game loop
 	while (1) {
@@ -292,11 +309,20 @@ int main()
 		if (firstTurn) {
 			cout << "WAIT" << ';';
 			firstTurn = false;
+			second_bomb_target = closest3ProdNode(startingEnemyNode, links, factories);
 		}
 		else {
 			if (bomb_count == 2) {
 				cout << "BOMB " << startingNode << ' ' << startingEnemyNode << ';';
 				bomb_count--;
+			}
+			if (current_turn == second_bomb_launch_turn) {
+				cerr << "bomb2 launch turn" << endl;
+				if (factories[second_bomb_target].player != 1 && second_bomb_target != -1) {
+					cout << "BOMB " << startingNode << ' ' << second_bomb_target << ';';
+					bomb_count--;
+				}
+				else second_bomb_launch_turn++;
 			}
 			int sourceNode = highestArmyNode(factories, factory_count, startingNode);
 			if (sourceNode == -1) {
