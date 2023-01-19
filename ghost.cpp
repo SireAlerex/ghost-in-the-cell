@@ -22,6 +22,11 @@ using namespace chrono;
 //initial algo : first turn is simple, all soldiers to closest 3 prod non ally node
 //then ? attack will all troops on nearest non ally node
 
+//next version : more attacks + bombs
+//amélioration : attaquer plus faible que soit
+
+//FIX : STARTING NODE OF SOURCE (ALLY)
+
 class link {
 public:
 	int factory;
@@ -169,9 +174,10 @@ int closestNode(int id, list<link> *links, factory *f) {
 }
 
 int highestArmyNode(factory *f, int count, int origin) {
-	int power_max = f[origin].cyborgs_count;
-	int id_max = origin;
+	int power_max = -1;
+	int id_max = -1;
 	for (int i = 1; i < count; i++) {
+		if (i == 6) cerr << f[i].player << ' ' << f[i].cyborgs_count << endl;
 		if (f[i].player == 1 && f[i].cyborgs_count > power_max) {
 			power_max = f[i].cyborgs_count;
 			id_max = i;
@@ -206,9 +212,10 @@ int main()
 	list<troop> troops;
 	int startingNode;
 	int startingCyborgs;
-	bool fin = false;
+
 	// game loop
 	while (1) {
+		bool fin = false;
 		//search for dead troops and delete
 		killTroops(&troops);
 		int entity_count; // the number of entities (e.g. factories and troops)
@@ -227,6 +234,7 @@ int main()
 			//data for factories
 			if (entity_type == "FACTORY") {
 				if (!firstTurn) {
+					if (entity_id == 6) cerr << arg_1 << ' ' << arg_2;
 					factories[entity_id].player = arg_1;
 					factories[entity_id].cyborgs_count = arg_2;
 				}
@@ -262,13 +270,21 @@ int main()
 			firstTurn = false;
 		}
 		else {
-			int sourceNode = highestArmyNode(factories, factory_count, sourceNode);
+			int sourceNode = highestArmyNode(factories, factory_count, startingNode);
+			if (sourceNode == -1) {
+				cout << "WAIT" << endl;
+				fin = true;
+			}
+			cerr << "source" << sourceNode;
 			int destinationNode = closestProdNode(sourceNode, links, factories);
+			cerr << "destination (try1):" << destinationNode << endl;
 			if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
+			cerr << "destination (try2):" << destinationNode << endl;
 			if (destinationNode == -1) {
 				cout << "WAIT" << endl;
 				fin = true;
 			}
+			cerr << sourceNode << ' ' << destinationNode << endl;
 			if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << endl;
 		}
 
