@@ -24,8 +24,10 @@ using namespace chrono;
 
 //next version : more attacks + bombs
 //amélioration : attaquer plus faible que soit
+//2nde bombe : x turn sur la 3prod usine la plus proche de la factory d'origine de l'ennemi
+//meilleur 1ere bombe : verifier la prod de l'usine de base de l'ennemi, ne pas attaquer si trop faible (<2 ? <3 ?)
 
-//FIX : STARTING NODE OF SOURCE (ALLY)
+//value of targetfactory : value = MAX_DIST*prod*MOD_PROD + MAX_PROD*(MAX_DIST-dist)*MOD_DIST
 
 class link {
 public:
