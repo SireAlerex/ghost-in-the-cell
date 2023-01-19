@@ -13,6 +13,29 @@ using namespace chrono;
  * the standard input according to the problem statement.
  **/
 
+//typetool
+template <typename T>
+constexpr auto type_name() {
+	std::string_view name, prefix, suffix;
+#ifdef __clang__
+	name = __PRETTY_FUNCTION__;
+  prefix = "auto type_name() [T = ";
+  suffix = "]";
+#elif defined(__GNUC__)
+	name = __PRETTY_FUNCTION__;
+	prefix = "constexpr auto type_name() [with T = ";
+	suffix = "]";
+#elif defined(_MSC_VER)
+	name = __FUNCSIG__;
+  prefix = "auto __cdecl type_name<";
+  suffix = ">(void)";
+#endif
+	name.remove_prefix(prefix.size());
+	name.remove_suffix(suffix.size());
+	return name;
+}
+
+
 //data structure idea
 //one array of factories with their properties
 //one list of troops with their properties
@@ -87,6 +110,28 @@ public:
 	}
 };
 
+void showFactories(factory *f, int count) {
+	for (int i = 0; i < count; i++) {
+		f[i].showFactory(i);
+	}
+}
+
+void showLinks(list<link> *l, int count) {
+	for (int i = 0; i < count; i++) {
+		for (auto it = l[i].begin(); it != l[i].end(); it++) {
+			cerr << "factory1:" << i << ' ';
+			(*it).showLink();
+		}
+	}
+}
+
+void showTroops(list<troop> t) {
+	if (t.empty()) return;
+	for (auto it = t.begin(); it != t.end(); it++) {
+		(*it).showTroop();
+	}
+}
+
 bool isTroopInList(int id, list<troop> *troops, list<troop>::iterator res_it) {
 	if (troops->empty()) return false;
 	cerr << endl << "not empty " << id << ' ' << troops->begin()->id;
@@ -127,25 +172,73 @@ void setAlive(list<troop> *l) {
 	}
 }
 
-void showFactories(factory *f, int count) {
-	for (int i = 0; i < count; i++) {
-		f[i].showFactory(i);
-	}
-}
+list<link> mergeLink(list<link> left, list<link> right) {
+	list<link> result;
 
-void showLinks(list<link> *l, int count) {
-	for (int i = 0; i < count; i++) {
-		for (auto it = l[i].begin(); it != l[i].end(); it++) {
-			cerr << "factory1:" << i << ' ';
-			(*it).showLink();
+	while (!left.empty() && !right.empty()) {
+		if (left.front().distance <= right.front().distance) {
+			result.push_back(left.front());
+			left.pop_front();
+		}
+		else {
+			result.push_back(right.front());
+			right.pop_front();
 		}
 	}
+
+	while (!left.empty()) {
+		result.push_back(left.front());
+		left.pop_front();
+	}
+	while (!right.empty()) {
+		result.push_back(right.front());
+		right.pop_front();
+	}
+
+	return result;
 }
 
-void showTroops(list<troop> t) {
-	if (t.empty()) return;
-	for (auto it = t.begin(); it != t.end(); it++) {
-		(*it).showTroop();
+list<link> merge_sortLink(list<link> l) {
+	int list_size = l.size();
+	if (list_size <= 1) return(l);
+
+	list<link> left;
+	list<link> right;
+	int i = 0;
+	for (auto it = l.begin(); it != l.end(); it++) {
+		if (i < (list_size/2)) left.push_back(*it);
+		else right.push_back(*it);
+		i++;
+	}
+
+	left = merge_sortLink(left);
+	right = merge_sortLink(right);
+
+	return(mergeLink(left, right));
+}
+
+void copyListLink(list<link> **source, list<link> **destination, int size) {
+	for (int i = 0; i < size; i++) {
+		(*destination)[i] = (*source)[i];
+	}
+}
+
+void sortLinks(list<link> *links, int factory_count) {
+	list<link> result[factory_count];
+	for (int i = 0; i < factory_count; i++) {
+		result[i] = merge_sortLink(links[i]);
+	}
+
+	//emptying links
+	for (int i = 0; i < factory_count; i++) {
+		while (!links[i].empty()) {
+			links[i].pop_front();
+		}
+	}
+	for (int i = 0; i < factory_count; i++) {
+		for (auto it = result[i].begin(); it != result[i].end(); it++) {
+			links[i].push_back(*it);
+		}
 	}
 }
 
@@ -189,6 +282,16 @@ int closestNode(int id, list<link> *links, factory *f) {
 	return id_ret;
 }
 
+int target(int source, list<link> *links, factory *factories) {
+	int target, targets[4];
+	int dist_min = 21, id_target = -1;
+	for (auto it = links[source].begin(); it != links[source].end(); it++) {
+
+	}
+
+	return target;
+}
+
 int highestArmyNode(factory *f, int count, int origin) {
 	int power_max = -1;
 	int id_max = -1;
@@ -206,6 +309,7 @@ int highestArmyNode(factory *f, int count, int origin) {
 
 int main()
 {
+	auto startMain = steady_clock::now();
 	int factory_count; // the number of factories
 	cin >> factory_count; cin.ignore();
 	factory *factories = (factory*)malloc(sizeof(factory)*factory_count);
@@ -223,6 +327,8 @@ int main()
 		links[factory_1].push_back(link(factory_2, distance));
 		links[factory_2].push_back(link(factory_1, distance));
 	}
+	sortLinks(links, factory_count);
+	showLinks(links, factory_count);
 
 	bool firstTurn = true;
 	list<troop> troops;
