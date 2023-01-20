@@ -58,6 +58,7 @@ int MAX_DIST = 20;
 int MAX_PROD = 3;
 float MOD_DIST = 1.5;
 float MOD_PROD = 1;
+int factory_count;
 
 class link {
 public:
@@ -309,6 +310,35 @@ int targetAvoid(int source, list<link> *links, factory *factories, int toAvoid) 
 	return value_max != -1 ? target : target_zero;
 }
 
+bool isPartOfArray(int i, int *array, int size) {
+	for (int k = 0; k < size; k++) {
+		//cerr << "isPart" << ' ' << array[k] << ' ' << i << endl;
+		if (array[k] == i) return true;
+	}
+	return false;
+}
+
+int closestTargetAvoid(int source, list<link> *links, factory *factories, int *avoid) {
+	int target = -1, target_zero = -1;
+	bool found = false;
+	auto cible = links[source].begin();
+	while (!found && cible != links[source].end()) {
+		if (factories[cible->factory].player != factories[source].player && !isPartOfArray(cible->factory, avoid, factory_count)) {
+			if (cible->factory == 5) cerr <<endl<< isPartOfArray(5, avoid, factory_count) <<endl;
+			if (factories[cible->factory].prod != 0) {
+				target = cible->factory;
+				found = true;
+			}
+			else {
+				target_zero = cible->factory;
+			}
+		}
+		cible++;
+	}
+
+	return (target != -1)? target : target_zero;
+}
+
 int closestTarget(int source, list<link> *links, factory *factories) {
 	int target = -1, target_zero = -1;
 	bool found = false;
@@ -398,14 +428,25 @@ bool isTargeted(int target,list<troop> troops) {
 }
 
 int fullAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops) {
-	int attack_count = 0;
+	int attack_count = 0, avoid_index = 0;
+	int avoid[factory_count];
 	for (int source = 0; source < factory_count; source++) {
-		if(factories[source].player == 1) cerr << "isTarget?"<<source << " : " << isTargeted(source, troops) << '\n';
+		if(factories[source].player == 1) //cerr << "isTarget?"<<source << " : " << isTargeted(source, troops) << '\n';
 		if (factories[source].player == 1 && !isTargeted(source, troops)) {
 			int target_attack = closestTarget(source, links, factories);
-			cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
+			//cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
 			//if cant attack, recalculate target with avoid (array ?)
-			if (canAttackSucceed(factories, source, target_attack)) {
+			while (!canAttackSucceed(factories, source, target_attack) && target_attack != -1) {
+				cerr << "target:" << target_attack << ' ';
+				avoid[avoid_index] = target_attack;
+				cerr << "avoid set " << avoid[avoid_index] << ' ' << avoid_index;
+				avoid_index++;
+
+				target_attack = closestTargetAvoid(source, links, factories, avoid);
+				//cerr << " end while\n";
+			}
+
+			if (target_attack != -1) {
 				int power = troopPower(factories, source, target_attack);
 				cout << "MOVE " << source << ' ' << target_attack << ' ' << power << ';';
 				attack_count++;
@@ -418,7 +459,7 @@ int fullAttack(factory *factories, list<link> *links, int factory_count, list<tr
 int main()
 {
 	auto startMain = steady_clock::now();
-	int factory_count; // the number of factories
+	// the number of factories
 	cin >> factory_count; cin.ignore();
 	factory *factories = (factory*)malloc(sizeof(factory)*factory_count);
 	list<int> alliedFactories;
