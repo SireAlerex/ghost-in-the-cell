@@ -8,8 +8,6 @@
 using namespace std;
 using namespace chrono;
 
-//ranking : bronze #209, #162
-
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
@@ -38,17 +36,10 @@ constexpr auto type_name() {
 }
 
 
-//data structure idea
-//one array of factories with their properties
-//one list of troops with their properties
-//one array of lists of links (index 0 contains a list of all links of factory 0)
-// or 2d array
+//TODO
 
-//initial algo : first turn is simple, all soldiers to closest 3 prod non ally node
-//then ? attack will all troops on nearest non ally node
-
-//next version : more attacks
-//amélioration : attaquer plus faible que soit
+//willBeConquered (to avoid useless attacks)
+//troop_power : take prod and travel time into account
 
 //défense aussi
 
@@ -425,6 +416,10 @@ bool isTargeted(int target,list<troop> troops) {
 		}
 	}
 	return false;
+}
+
+bool willBeConquered() {
+
 }
 
 int fullAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops) {
