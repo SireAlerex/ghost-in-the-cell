@@ -8,7 +8,7 @@
 using namespace std;
 using namespace chrono;
 
-//ranking : bronze #356, #871, #607
+//ranking : bronze #209, #162
 
 /**
  * Auto-generated code below aims at helping you parse
@@ -309,6 +309,26 @@ int targetAvoid(int source, list<link> *links, factory *factories, int toAvoid) 
 	return value_max != -1 ? target : target_zero;
 }
 
+int closestTarget(int source, list<link> *links, factory *factories) {
+	int target = -1, target_zero = -1;
+	bool found = false;
+	auto cible = links[source].begin();
+	while (!found && cible != links[source].end()) {
+		if (factories[cible->factory].player != factories[source].player) {
+			if (factories[cible->factory].prod != 0) {
+				target = cible->factory;
+				found = true;
+			}
+			else {
+				target_zero = cible->factory;
+			}
+		}
+		cible++;
+	}
+
+	return (target != -1)? target : target_zero;
+}
+
 int target(int source, list<link> *links, factory *factories) {
 	int target = -1, value_max = -1, target_zero = -1;
 	for (auto i = links[source].begin(); i != links[source].end(); i++) {
@@ -500,19 +520,20 @@ int main()
 					fin = true;
 					skip = true;
 				}
-				cerr << "source" << sourceNode;
+				cerr << "source " << sourceNode;
 				if (!skip) {
 					/*
 					int destinationNode = closestProdNode(sourceNode, links, factories);
 					cerr << "destination (try1):" << destinationNode << endl;
 					if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
 					cerr << "destination (try2):" << destinationNode << endl;*/
-					int destinationNode = target(sourceNode, links, factories);
+					//int destinationNode = target(sourceNode, links, factories);
+					int destinationNode = closestTarget(sourceNode, links, factories);
+					cerr << " destination " << destinationNode;
 					if (destinationNode == -1) {
 						cout << "WAIT" << ';';
 						fin = true;
 					}
-					cerr << sourceNode << ' ' << destinationNode << endl;
 
 					if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << ';';
 				}
