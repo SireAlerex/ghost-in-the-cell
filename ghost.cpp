@@ -8,6 +8,8 @@
 using namespace std;
 using namespace chrono;
 
+//ranking : bronze #356, #871, #607
+
 /**
  * Auto-generated code below aims at helping you parse
  * the standard input according to the problem statement.
