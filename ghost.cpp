@@ -139,6 +139,12 @@ void showTroops(list<troop> t) {
 	}
 }
 
+void emptyTroops(list<troop> *troops) {
+	while (!troops->empty()) {
+		troops->pop_front();
+	}
+}
+
 bool isTroopInList(int id, list<troop> *troops, list<troop>::iterator res_it) {
 	if (troops->empty()) return false;
 	cerr << endl << "not empty " << id << ' ' << troops->begin()->id;
@@ -222,12 +228,6 @@ list<link> merge_sortLink(list<link> l) {
 	right = merge_sortLink(right);
 
 	return(mergeLink(left, right));
-}
-
-void copyListLink(list<link> **source, list<link> **destination, int size) {
-	for (int i = 0; i < size; i++) {
-		(*destination)[i] = (*source)[i];
-	}
 }
 
 void sortLinks(list<link> *links, int factory_count) {
@@ -375,6 +375,46 @@ int bombStrategy(factory *factories, list<link> *links, int allyStart, int enemy
 	return bomb_target;
 }
 
+int troopPower(factory *factories, int source, int destination) {
+	int ally_power = factories[source].cyborgs_count;
+	int enemy_power = factories[destination].cyborgs_count;
+	if (enemy_power <= 1) return 2;
+	return ally_power <= 1.5*enemy_power ? ally_power : 1.5*enemy_power;
+}
+
+bool canAttackSucceed(factory *factories, int source, int destination) {
+	if (source == -1 || destination == -1) return false;
+	return factories[source].cyborgs_count > factories[destination].cyborgs_count ? true : false;
+}
+
+bool isTargeted(int target,list<troop> troops) {
+	for (auto it = troops.begin(); it != troops.end(); it++) {
+		if ((*it).destination == target && (*it).player == -1) {
+			//(*it).showTroop();
+			return true;
+		}
+	}
+	return false;
+}
+
+int fullAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops) {
+	int attack_count = 0;
+	for (int source = 0; source < factory_count; source++) {
+		if(factories[source].player == 1) cerr << "isTarget?"<<source << " : " << isTargeted(source, troops) << '\n';
+		if (factories[source].player == 1 && !isTargeted(source, troops)) {
+			int target_attack = closestTarget(source, links, factories);
+			cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
+			//if cant attack, recalculate target with avoid (array ?)
+			if (canAttackSucceed(factories, source, target_attack)) {
+				int power = troopPower(factories, source, target_attack);
+				cout << "MOVE " << source << ' ' << target_attack << ' ' << power << ';';
+				attack_count++;
+			}
+		}
+	}
+	return attack_count;
+}
+
 int main()
 {
 	auto startMain = steady_clock::now();
@@ -396,7 +436,7 @@ int main()
 		links[factory_2].push_back(link(factory_1, distance));
 	}
 	sortLinks(links, factory_count);
-	showLinks(links, factory_count);
+	//showLinks(links, factory_count);
 
 	bool firstTurn = true;
 	list<troop> troops;
@@ -421,12 +461,11 @@ int main()
 		//int enemy_cyborg_count = 0;
 
 		//search for dead troops and delete
-		killTroops(&troops);
+		//killTroops(&troops);
 
 		int entity_count; // the number of entities (e.g. factories and troops)
 		cin >> entity_count; cin.ignore();
 		//int troop_count = entity_count - factory_count;
-		cerr << "start data input" << endl;
 		for (int i = 0; i < entity_count; i++) {
 			int entity_id;
 			string entity_type;
@@ -461,6 +500,7 @@ int main()
 
 			//data for troops
 			if (entity_type == "TROOP") {
+				/*
 				list<troop>::iterator it = TroopInList(entity_id, &troops);
 				if (it != troops.end()) {
 					(*it).time = arg_5;
@@ -469,7 +509,10 @@ int main()
 				else {
 					troop *current_troop = new troop(entity_id, arg_1, arg_2, arg_3, arg_4, arg_5, true);
 					troops.push_back(*current_troop);
-				}
+				}*/
+
+				troop *current_troop = new troop(entity_id, arg_1, arg_2, arg_3, arg_4, arg_5, true);
+				troops.push_back(*current_troop);
 
 				/*
 				if (arg_1 == 1) ally_cyborg_count += arg_4;
@@ -477,7 +520,6 @@ int main()
 				cerr << "troop" << arg_1 << ' ' << arg_2 << endl;*/
 			}
 		}
-		cerr << "end data input" << endl;
 
 		bool skip = false;
 		if (firstTurn) {
@@ -514,6 +556,10 @@ int main()
 
 			//if current_turn = bombs_turn : save 2*BOMB_ATTACK_POWER for next turn (int
 			if (current_turn != bombs_turn) {
+				int attack_count = fullAttack(factories, links, factory_count, troops);
+				if (attack_count == 0) cout << "WAIT;";
+				cerr << "attack_count : " << attack_count << endl;
+				/*
 				int sourceNode = highestArmyNode(factories, factory_count, startingNode);
 				if (sourceNode == -1) {
 					cout << "WAIT" << ';';
@@ -522,12 +568,6 @@ int main()
 				}
 				cerr << "source " << sourceNode;
 				if (!skip) {
-					/*
-					int destinationNode = closestProdNode(sourceNode, links, factories);
-					cerr << "destination (try1):" << destinationNode << endl;
-					if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
-					cerr << "destination (try2):" << destinationNode << endl;*/
-					//int destinationNode = target(sourceNode, links, factories);
 					int destinationNode = closestTarget(sourceNode, links, factories);
 					cerr << " destination " << destinationNode;
 					if (destinationNode == -1) {
@@ -536,13 +576,11 @@ int main()
 					}
 
 					if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << ';';
-				}
+				}*/
 			}
 
 		}
-
-		//set all troops to not alive
-		setAlive(&troops);
+		emptyTroops(&troops);
 
 		auto end_loop = steady_clock::now();
 		auto time_loop = duration_cast<milliseconds>(end_loop - start_loop);
