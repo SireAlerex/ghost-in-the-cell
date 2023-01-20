@@ -47,10 +47,11 @@ constexpr auto type_name() {
 //initial algo : first turn is simple, all soldiers to closest 3 prod non ally node
 //then ? attack will all troops on nearest non ally node
 
-//next version : more attacks + bombs
+//next version : more attacks
 //amélioration : attaquer plus faible que soit
-//2nde bombe : x turn sur la 3prod usine la plus proche de la factory d'origine de l'ennemi
-//meilleur 1ere bombe : verifier la prod de l'usine de base de l'ennemi, ne pas attaquer si trop faible (<2 ? <3 ?)
+
+//défense aussi
+
 
 //value of targetfactory : value = MAX_DIST*prod*MOD_PROD + MAX_PROD*(MAX_DIST-dist)*MOD_DIST
 int MAX_DIST = 20;
