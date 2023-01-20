@@ -286,6 +286,26 @@ int closestNode(int id, list<link> *links, factory *f) {
 	return id_ret;
 }
 
+int targetAvoid(int source, list<link> *links, factory *factories, int toAvoid) {
+	int target = -1, value_max = -1, target_zero = -1;
+	for (auto i = links[source].begin(); i != links[source].end(); i++) {
+		int cible = (*i).factory;
+		int value = MAX_DIST*factories[cible].prod*MOD_PROD + MAX_PROD*(MAX_DIST-(*i).distance)*MOD_DIST;
+		if (value > value_max && factories[cible].player != factories[source].player && cible != toAvoid) {
+			if (factories[cible].prod == 0) {
+				value_max = value;
+				target_zero = cible;
+			}
+			else {
+				value_max = value;
+				target = cible;
+			}
+		}
+	}
+
+	return value_max != -1 ? target : target_zero;
+}
+
 int target(int source, list<link> *links, factory *factories) {
 	int target = -1, value_max = -1, target_zero = -1;
 	for (auto i = links[source].begin(); i != links[source].end(); i++) {
@@ -307,7 +327,6 @@ int highestArmyNode(factory *f, int count, int origin) {
 	int power_max = -1;
 	int id_max = -1;
 	for (int i = 1; i < count; i++) {
-		if (i == 6) cerr << f[i].player << ' ' << f[i].cyborgs_count << endl;
 		if (f[i].player == 1 && f[i].cyborgs_count > power_max) {
 			power_max = f[i].cyborgs_count;
 			id_max = i;
@@ -316,7 +335,22 @@ int highestArmyNode(factory *f, int count, int origin) {
 
 	return id_max;
 }
-//better find source + fast source
+
+int bombStrategy(factory *factories, list<link> *links, int allyStart, int enemyStart, int *bomb_count) {
+	//first bomb on enemyStart
+	if ((*bomb_count) == 2) {
+		cout << "BOMB " << allyStart << ' ' << enemyStart << ';';
+		(*bomb_count)--;
+	}
+
+	int bomb_target = targetAvoid(enemyStart, links, factories, allyStart);
+	if (bomb_target != -1) {
+		cout << "BOMB " << allyStart << ' ' << bomb_target << ';';
+		(*bomb_count)--;
+	}
+
+	return bomb_target;
+}
 
 int main()
 {
@@ -348,9 +382,11 @@ int main()
 	int startingCyborgs;
 	int bomb_count = 2;
 	int current_turn = 1;
-	const int FIRST_BOMB_LAUNCH_TURN = 1;
-	int second_bomb_launch_turn = 3;
-	int second_bomb_target;
+	const int BOMB_ATTACK_POWER = 2;
+	int bomb_target = -1;
+	int bombs_turn;
+	bool bombs_launched = false;
+	bool bombs_attack_launched = false;
 
 	// game loop
 	while (1) {
@@ -419,16 +455,13 @@ int main()
 		}
 		cerr << "end data input" << endl;
 
-		//showFactories(factories, factory_count);
-		//showTroops(troops);
-
 		bool skip = false;
 		if (firstTurn) {
 			cout << "WAIT" << ';';
 			firstTurn = false;
-			second_bomb_target = closest3ProdNode(startingEnemyNode, links, factories);
 		}
 		else {
+			/*
 			if (bomb_count == 2) {
 				cout << "BOMB " << startingNode << ' ' << startingEnemyNode << ';';
 				bomb_count--;
@@ -441,29 +474,46 @@ int main()
 					bomb_count--;
 				}
 				else second_bomb_launch_turn++;
+			}*/
+			if (!bombs_launched) {
+				bomb_target = bombStrategy(factories, links, startingNode, startingEnemyNode, &bomb_count);
+				bombs_launched = true;
+				bombs_turn = current_turn;
 			}
-			int sourceNode = highestArmyNode(factories, factory_count, startingNode);
-			if (sourceNode == -1) {
-				cout << "WAIT" << ';';
-				fin = true;
-				skip = true;
+			if (!bombs_attack_launched && current_turn != bombs_turn) {
+				cout << "MOVE " << startingNode << ' ' << startingEnemyNode << ' ' << BOMB_ATTACK_POWER << ';';
+				if (bomb_target != -1) {
+					cout << "MOVE " << startingNode << ' ' << bomb_target << ' ' << BOMB_ATTACK_POWER << ';';
+				}
+				bombs_attack_launched = true;
 			}
-			cerr << "source" << sourceNode;
-			if (!skip) {
-				/*
-				int destinationNode = closestProdNode(sourceNode, links, factories);
-				cerr << "destination (try1):" << destinationNode << endl;
-				if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
-				cerr << "destination (try2):" << destinationNode << endl;*/
-				int destinationNode = target(sourceNode, links, factories);
-				if (destinationNode == -1) {
+
+			//if current_turn = bombs_turn : save 2*BOMB_ATTACK_POWER for next turn (int
+			if (current_turn != bombs_turn) {
+				int sourceNode = highestArmyNode(factories, factory_count, startingNode);
+				if (sourceNode == -1) {
 					cout << "WAIT" << ';';
 					fin = true;
+					skip = true;
 				}
-				cerr << sourceNode << ' ' << destinationNode << endl;
+				cerr << "source" << sourceNode;
+				if (!skip) {
+					/*
+					int destinationNode = closestProdNode(sourceNode, links, factories);
+					cerr << "destination (try1):" << destinationNode << endl;
+					if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
+					cerr << "destination (try2):" << destinationNode << endl;*/
+					int destinationNode = target(sourceNode, links, factories);
+					if (destinationNode == -1) {
+						cout << "WAIT" << ';';
+						fin = true;
+					}
+					cerr << sourceNode << ' ' << destinationNode << endl;
 
-				if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << ';';
+					if(!fin) cout << "MOVE " << sourceNode << ' ' << destinationNode << ' ' << factories[sourceNode].cyborgs_count << ';';
+				}
 			}
+
 		}
 
 		//set all troops to not alive
