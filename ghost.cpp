@@ -51,6 +51,10 @@ constexpr auto type_name() {
 //meilleur 1ere bombe : verifier la prod de l'usine de base de l'ennemi, ne pas attaquer si trop faible (<2 ? <3 ?)
 
 //value of targetfactory : value = MAX_DIST*prod*MOD_PROD + MAX_PROD*(MAX_DIST-dist)*MOD_DIST
+int MAX_DIST = 20;
+int MAX_PROD = 3;
+float MOD_DIST = 1.5;
+float MOD_PROD = 1;
 
 class link {
 public:
@@ -283,13 +287,20 @@ int closestNode(int id, list<link> *links, factory *f) {
 }
 
 int target(int source, list<link> *links, factory *factories) {
-	int target, targets[4];
-	int dist_min = 21, id_target = -1;
-	for (auto it = links[source].begin(); it != links[source].end(); it++) {
-
+	int target = -1, value_max = -1, target_zero = -1;
+	for (auto i = links[source].begin(); i != links[source].end(); i++) {
+		int cible = (*i).factory;
+		int value = MAX_DIST*factories[cible].prod*MOD_PROD + MAX_PROD*(MAX_DIST-(*i).distance)*MOD_DIST;
+		if (value > value_max && factories[cible].player != factories[source].player) {
+			if (factories[cible].prod == 0) target_zero = cible;
+			else {
+				value_max = value;
+				target = cible;
+			}
+		}
 	}
 
-	return target;
+	return value_max != -1 ? target : target_zero;
 }
 
 int highestArmyNode(factory *f, int count, int origin) {
@@ -424,7 +435,8 @@ int main()
 			}
 			if (current_turn == second_bomb_launch_turn) {
 				cerr << "bomb2 launch turn" << endl;
-				if (factories[second_bomb_target].player != 1 && second_bomb_target != -1) {
+				if (factories[second_bomb_target].player != 1 && second_bomb_target != -1
+					&& factories[startingNode].player == 1) {
 					cout << "BOMB " << startingNode << ' ' << second_bomb_target << ';';
 					bomb_count--;
 				}
@@ -438,10 +450,12 @@ int main()
 			}
 			cerr << "source" << sourceNode;
 			if (!skip) {
+				/*
 				int destinationNode = closestProdNode(sourceNode, links, factories);
 				cerr << "destination (try1):" << destinationNode << endl;
 				if (destinationNode == -1) destinationNode = closestNode(sourceNode, links, factories);
-				cerr << "destination (try2):" << destinationNode << endl;
+				cerr << "destination (try2):" << destinationNode << endl;*/
+				int destinationNode = target(sourceNode, links, factories);
 				if (destinationNode == -1) {
 					cout << "WAIT" << ';';
 					fin = true;
