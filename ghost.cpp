@@ -422,6 +422,7 @@ int main()
 				if (!firstTurn) {
 					factories[entity_id].player = arg_1;
 					factories[entity_id].cyborgs_count = arg_2;
+					factories[entity_id].prod = arg_3;
 				}
 				else {
 					factories[entity_id] = factory(arg_1, arg_2, arg_3);
