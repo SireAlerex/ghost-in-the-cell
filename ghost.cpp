@@ -165,9 +165,8 @@ list<troop>::iterator TroopInList(int id, list<troop> *troops) {
 
 //delete all dead troops
 void killTroops(list<troop> *l) {
-	for (auto it = l->begin(); it != l->end(); it++) {
+	for (auto it = l->begin(); it != l->end(); it++)
 		if ((*it).alive == false) (*it).~troop();
-	}
 }
 
 //set alive parameter of all troops to false at the end of a turn
@@ -418,8 +417,14 @@ bool isTargeted(int target,list<troop> troops) {
 	return false;
 }
 
-bool willBeConquered() {
-
+bool willBeConquered(int target, list<troop> troops, factory *factories) {
+	int target_power = factories[target].cyborgs_count;
+	for (auto it = troops.begin(); it != troops.end(); it++) {
+		if ((*it).destination == target) {
+			factories[target].player != (*it).player ? target_power -= (*it).power : target_power += (*it).power;
+		}
+	}
+	return (target_power > 0) ? false : true;
 }
 
 int fullAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops) {
@@ -431,7 +436,8 @@ int fullAttack(factory *factories, list<link> *links, int factory_count, list<tr
 			int target_attack = closestTarget(source, links, factories);
 			//cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
 			//if cant attack, recalculate target with avoid (array ?)
-			while (!canAttackSucceed(factories, source, target_attack) && target_attack != -1) {
+			while (willBeConquered(target_attack, troops, factories) &&
+			!canAttackSucceed(factories, source, target_attack) && target_attack != -1) {
 				cerr << "target:" << target_attack << ' ';
 				avoid[avoid_index] = target_attack;
 				cerr << "avoid set " << avoid[avoid_index] << ' ' << avoid_index;
