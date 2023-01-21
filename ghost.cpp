@@ -427,6 +427,22 @@ bool willBeConquered(int target, list<troop> troops, factory *factories) {
 	return (target_power > 0) ? false : true;
 }
 
+void firstAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops, int lim, int source) {
+	int target = closestTarget(source, links, factories);
+	int avoid[factory_count];
+	int avoid_index = 0;
+	while (target != -1 && avoid_index < factory_count &&
+		((factories[source].cyborgs_count)-lim) <= factories[target].cyborgs_count) {
+		avoid[avoid_index] = target;
+		avoid_index++;
+		target = closestTargetAvoid(source, links, factories, avoid);
+	}
+	if (target != -1) {
+		int power = troopPower(factories, source, target);
+		cout << "MOVE " << source << ' ' << target << ' ' << power << ';';
+	}
+}
+
 int fullAttack(factory *factories, list<link> *links, int factory_count, list<troop> troops) {
 	int attack_count = 0, avoid_index = 0;
 	int avoid[factory_count];
@@ -598,6 +614,7 @@ int main()
 
 			//if current_turn = bombs_turn : save 2*BOMB_ATTACK_POWER for next turn (int
 			if (current_turn != bombs_turn) {
+				if (current_turn == bombs_turn+1) firstAttack(factories, links, factory_count, troops, 4, startingNode);
 				int attack_count = fullAttack(factories, links, factory_count, troops);
 				if (attack_count == 0) cout << "WAIT;";
 				cerr << "attack_count : " << attack_count << endl;
