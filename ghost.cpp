@@ -37,10 +37,9 @@ constexpr auto type_name() {
 
 
 //TODO
-//troop_power : travel time
-
-//focus attaque
 //améliorer willBeConquered (ne pas attaquer juste avant d'une attaque qui ne passerait pas normalement)
+//focus attaque
+
 //troop_power : take prod and travel time into account (travel time can make it very defensive)
 //bomb defence protocol
 //version plus avancees
