@@ -37,19 +37,21 @@ constexpr auto type_name() {
 
 
 //TODO
+//changer isTargeted pour willBeConquered (pour éviter d'être pinned)
 
-//willBeConquered (to avoid useless attacks)
-//troop_power : take prod and travel time into account
-
-//défense aussi
+//troop_power : take prod and travel time into account (travel time can make it very defensive)
+//version plus avancees
+//défense + consolidation + pas d'attaque si prod plus faible
 
 
 //value of targetfactory : value = MAX_DIST*prod*MOD_PROD + MAX_PROD*(MAX_DIST-dist)*MOD_DIST
+//constantes
 int MAX_DIST = 20;
 int MAX_PROD = 3;
 float MOD_DIST = 1.5;
 float MOD_PROD = 1;
 int factory_count;
+int no_attck = 0;
 
 class link {
 public:
@@ -314,14 +316,14 @@ int closestTargetAvoid(int source, list<link> *links, factory *factories, int *a
 	auto cible = links[source].begin();
 	while (!found && cible != links[source].end()) {
 		if (factories[cible->factory].player != factories[source].player && !isPartOfArray(cible->factory, avoid, factory_count)) {
-			if (cible->factory == 5) cerr <<endl<< isPartOfArray(5, avoid, factory_count) <<endl;
-			if (factories[cible->factory].prod != 0) {
-				target = cible->factory;
-				found = true;
-			}
-			else {
-				target_zero = cible->factory;
-			}
+			if (cible->factory == 5) //cerr <<endl<< isPartOfArray(5, avoid, factory_count) <<endl;
+				if (factories[cible->factory].prod != 0) {
+					target = cible->factory;
+					found = true;
+				}
+				else {
+					target_zero = cible->factory;
+				}
 		}
 		cible++;
 	}
@@ -432,7 +434,7 @@ void firstAttack(factory *factories, list<link> *links, int factory_count, list<
 	int avoid[factory_count];
 	int avoid_index = 0;
 	while (target != -1 && avoid_index < factory_count &&
-		((factories[source].cyborgs_count)-lim) <= factories[target].cyborgs_count) {
+		   ((factories[source].cyborgs_count)-lim) <= factories[target].cyborgs_count) {
 		avoid[avoid_index] = target;
 		avoid_index++;
 		target = closestTargetAvoid(source, links, factories, avoid);
@@ -448,27 +450,32 @@ int fullAttack(factory *factories, list<link> *links, int factory_count, list<tr
 	int avoid[factory_count];
 	for (int source = 0; source < factory_count; source++) {
 		if(factories[source].player == 1) //cerr << "isTarget?"<<source << " : " << isTargeted(source, troops) << '\n';
-		if (factories[source].player == 1 && !isTargeted(source, troops)) {
-			int target_attack = closestTarget(source, links, factories);
-			//cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
-			//if cant attack, recalculate target with avoid (array ?)
-			while (willBeConquered(target_attack, troops, factories) &&
-			!canAttackSucceed(factories, source, target_attack) && target_attack != -1) {
-				cerr << "target:" << target_attack << ' ';
-				avoid[avoid_index] = target_attack;
-				cerr << "avoid set " << avoid[avoid_index] << ' ' << avoid_index;
-				avoid_index++;
+			if (factories[source].player == 1 && !willBeConquered(source, troops,factories)) {
+				int target_attack = closestTarget(source, links, factories);
+				//cerr << "canAttack? : "<< source << ' ' << target_attack << ' ' << canAttackSucceed(factories, source, target_attack) << endl;
+				//if cant attack, recalculate target with avoid (array ?)
+				while (willBeConquered(target_attack, troops, factories) &&
+					   !canAttackSucceed(factories, source, target_attack) && target_attack != -1) {
+					//cerr << "target:" << target_attack << ' ';
+					avoid[avoid_index] = target_attack;
+					//cerr << "avoid set " << avoid[avoid_index] << ' ' << avoid_index;
+					avoid_index++;
 
-				target_attack = closestTargetAvoid(source, links, factories, avoid);
-				//cerr << " end while\n";
-			}
+					target_attack = closestTargetAvoid(source, links, factories, avoid);
+					//cerr << " end while\n";
+				}
 
-			if (target_attack != -1) {
-				int power = troopPower(factories, source, target_attack);
-				cout << "MOVE " << source << ' ' << target_attack << ' ' << power << ';';
-				attack_count++;
+				if (target_attack != -1) {
+					int power = troopPower(factories, source, target_attack);
+					cout << "MOVE " << source << ' ' << target_attack << ' ' << power << ';';
+					attack_count++;
+				}
+				else {
+					if (factories[source].cyborgs_count > 12 && factories[source].prod < 3) {
+						cout << "INC " << source << ';';
+					}
+				}
 			}
-		}
 	}
 	return attack_count;
 }
@@ -640,6 +647,7 @@ int main()
 
 		}
 		emptyTroops(&troops);
+		cerr << "no_attack:" << no_attck << endl;
 
 		auto end_loop = steady_clock::now();
 		auto time_loop = duration_cast<milliseconds>(end_loop - start_loop);
